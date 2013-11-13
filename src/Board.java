@@ -35,19 +35,19 @@ public class Board {
 			for(int j = 0; j < board_vect.get(i).length(); j++){
 				board[i][j] = board_vect.get(i).charAt(j);
 				if(board[i][j] == Symbol.BOX.getChar()){
-					goalCoords.add(new Cell(i, j));
+					goalCoords.add(new Cell(j, i));
 					board[i][j] = Symbol.GOAL.getChar();
 				}else if(board[i][j] == Symbol.GOAL.getChar()){
-					boxCoords.add(new Cell(i, j));
+					boxCoords.add(new Cell(j, i));
 					board[i][j] = Symbol.BOX.getChar();
 				}else if(board[i][j] == Symbol.BOX_ON_GOAL.getChar()){
-					goalCoords.add(new Cell(i, j));
-					boxCoords.add(new Cell(i, j));
+					goalCoords.add(new Cell(j, i));
+					boxCoords.add(new Cell(j, i));
 				}else if(board[i][j] == Symbol.PLAYER.getChar()){
-					player = new Cell(i, j);
+					player = new Cell(j, i);
 					board[i][j] = Symbol.FREE_SPACE.getChar();
 				}else if(board[i][j] == Symbol.PLAYER_ON_GOAL.getChar()){
-					player = new Cell(i, j);
+					player = new Cell(j, i);
 					board[i][j] = Symbol.GOAL.getChar();
 					
 				}
@@ -57,6 +57,14 @@ public class Board {
 		return board;
 	}
 
+	public static Cell[] getBoxArray(){
+		Cell[] cell = new Cell[boxCoords.size()];
+		for(int i = 0; i < boxCoords.size(); i++){
+			cell[i] = boxCoords.get(i);
+		}
+		return cell;
+	}
+	
 	public static void printBoard(char[][] board){
 		for(int i = 0; i < board.length; i++){
 			for(int j = 0; j < board[0].length; j++){

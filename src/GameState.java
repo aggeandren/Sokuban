@@ -4,14 +4,16 @@ public class GameState {
 	char pullDirection;
 	GameState prevGameState = null;
 	int[][] roomMatrix = new int[Main.board.length][Main.board[0].length];
+	char[][] current_board;
 
 	public GameState(Cell[] boxState, int x, int y, GameState prevGameState,
-			char direction) {
+			char direction, char[][] board) {
 		this.boxState = boxState;
 		playerX = x;
 		playerY = y;
 		pullDirection = direction;
 		this.prevGameState = prevGameState;
+		current_board = board;
 		generateWorth();
 	}
 
@@ -33,6 +35,10 @@ public class GameState {
 
 	public int getWroth() {
 		return worth;
+	}
+	
+	public char[][] board(){
+		return current_board;
 	}
 
 	public char getPushDirection() {
