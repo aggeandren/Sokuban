@@ -6,7 +6,8 @@ import java.util.Vector;
 
 
 public class Board {
-	public static int startX, startY, num_of_boxes;
+	public static int num_of_boxes;
+	public static Cell player;
 	
 	/** Borde vi göra egna objekt eller försöka lösa det i en simplare lösning då vi egentligen bara är 
 	 * intresserad av x och y coordinaterna?. För boxCoords och goalCoords det vill säga.
@@ -43,12 +44,10 @@ public class Board {
 					goalCoords.add(new Cell(i, j));
 					boxCoords.add(new Cell(i, j));
 				}else if(board[i][j] == Symbol.PLAYER.getChar()){
-					startX = i;
-					startY = j;
+					player = new Cell(i, j);
 					board[i][j] = Symbol.FREE_SPACE.getChar();
 				}else if(board[i][j] == Symbol.PLAYER_ON_GOAL.getChar()){
-					startX = i;
-					startY = j;
+					player = new Cell(i, j);
 					board[i][j] = Symbol.GOAL.getChar();
 					
 				}
