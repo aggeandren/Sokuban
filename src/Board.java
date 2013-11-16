@@ -73,5 +73,23 @@ public class Board {
 			System.out.println();
 		}
 	}
+	
+	public static boolean isSolution(GameState gs){
+		Cell[] box_state = gs.getBoxState();
+		boolean boxOnGoal;
+		for(int i = 0; i < goalCoords.size(); i++){
+			boxOnGoal = false;
+			Cell goal = goalCoords.get(i);
+			for(int j = 0; j < box_state.length; j++){
+				if(!goal.equals(box_state[j])){
+					boxOnGoal = true;
+				}
+			}
+			if(!boxOnGoal){
+				return false;
+			}
+		}
+		return true;
+	}
 }
 

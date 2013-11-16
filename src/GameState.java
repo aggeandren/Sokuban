@@ -1,6 +1,7 @@
-public class GameState {
+public class GameState implements Comparable<GameState>{
 	Cell[] boxState;
-	int playerX, playerY, worth;
+	Cell player;
+	int worth;
 	char pullDirection;
 	GameState prevGameState = null;
 	int[][] roomMatrix = new int[Main.board.length][Main.board[0].length];
@@ -9,8 +10,7 @@ public class GameState {
 	public GameState(Cell[] boxState, int x, int y, GameState prevGameState,
 			char direction, char[][] board) {
 		this.boxState = boxState;
-		playerX = x;
-		playerY = y;
+		player = new Cell(x, y);
 		pullDirection = direction;
 		this.prevGameState = prevGameState;
 		current_board = board;
@@ -18,11 +18,15 @@ public class GameState {
 	}
 
 	public int getX() {
-		return playerX;
+		return player.getX();
 	}
 
 	public int getY() {
-		return playerY;
+		return player.getY();
+	}
+	
+	public Cell getPlayerPos(){
+		return player;
 	}
 
 	public Cell[] getBoxState() {
@@ -57,6 +61,27 @@ public class GameState {
 	
 	public void setInRoom(int x, int y){
 		roomMatrix[x][y] = 1;
+	}
+	
+	public boolean isInRoom(int x, int y){
+		if(roomMatrix[x][y] == 1){
+			return true;
+		}
+		return false;
+	}
+	
+	public Cell getBox(int x, int y){
+		for(int i = 0; i < boxState.length; i++){
+			if(boxState[i].getX() == x && boxState[i].getY() == y){
+				return boxState[i];
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public int compareTo(GameState gs) {
+		return worth - gs.worth;
 	}
 
 }

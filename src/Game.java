@@ -77,26 +77,59 @@ public class Game {
 			switch (dir) {
 			case 'R':
 				if (board[y][x + 1] == Symbol.FREE_SPACE.getChar()
-						|| board[y][x] == Symbol.GOAL.getChar())
+						|| board[y][x+1] == Symbol.GOAL.getChar())
 					return true;
 				break;
 			case 'L':
 				if (board[y][x - 1] == Symbol.FREE_SPACE.getChar()
-						|| board[y][x] == Symbol.GOAL.getChar())
+						|| board[y][x-1] == Symbol.GOAL.getChar())
 					return true;
 				break;
 			case 'U':
 				if (board[y - 1][x] == Symbol.FREE_SPACE.getChar()
-						|| board[y][x] == Symbol.GOAL.getChar())
+						|| board[y-1][x] == Symbol.GOAL.getChar())
 					return true;
 				break;
 			case 'D':
 				if (board[y + 1][x] == Symbol.FREE_SPACE.getChar()
-						|| board[y][x] == Symbol.GOAL.getChar())
+						|| board[y+1][x] == Symbol.GOAL.getChar())
 					return true;
 				break;
 			}
 		}
 		return false;
+	}
+
+	public static GameState createGameState(int x, int y, Cell old_box, GameState gs, char dir) {
+		Cell[] boxState = gs.getBoxState();
+		Cell[] new_list = new Cell[boxState.length];
+		char[][] new_board = new char[gs.board().length][gs.board()[0].length];
+		new_list = boxState.clone();
+		int value = 0;
+		for(int j = 0; j < gs.board().length; j++){
+			new_board[j] = gs.board()[j].clone();
+		}
+		for(int i = 0; i < new_list.length; i++){
+			if(boxState[i].equals(old_box)){
+				new_list[i] = new Cell(x, y);
+				value = i;
+			}
+		}
+		new_board = updateBoard(new_list[value], boxState[value], gs.board());
+		switch(dir){
+		case 'R':
+			return new GameState(new_list, new_list[value].getX() + 1,
+					new_list[value].getY(), gs, dir, new_board);
+		case 'L':
+			return new GameState(new_list, new_list[value].getX() - 1,
+					new_list[value].getY(), gs, dir, new_board);
+		case 'D':
+			return new GameState(new_list, new_list[value].getX(),
+					new_list[value].getY() + 1, gs, dir, new_board);
+		case 'U':
+			return new GameState(new_list, new_list[value].getX(),
+					new_list[value].getY() - 1, gs, dir, new_board);
+		}
+		return null;
 	}
 }
