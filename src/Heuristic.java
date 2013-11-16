@@ -17,7 +17,7 @@ public class Heuristic {
 		return value;
 	}
 	
-	private static int manhattanDistance(Cell a, Cell b) {
+	public static int manhattanDistance(Cell a, Cell b) {
 		return (b.getX() - a.getX()) + (b.getY() - a.getY());
 	}
 
