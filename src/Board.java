@@ -7,12 +7,8 @@ import java.util.Vector;
 
 public class Board {
 	public static int num_of_boxes;
-	public static Cell player;
-	
-	/** Borde vi göra egna objekt eller försöka lösa det i en simplare lösning då vi egentligen bara är 
-	 * intresserad av x och y coordinaterna?. För boxCoords och goalCoords det vill säga.
-	 * **/
-	
+	public static Cell startPlayer;
+	public static int boardSize = 0;
 	public static ArrayList<Cell> boxCoords = new ArrayList<Cell>();
 	public static ArrayList<Cell> goalCoords = new ArrayList<Cell>();
 	
@@ -21,15 +17,18 @@ public class Board {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		String line;
 		Vector<String> board_vect = new Vector<String>();
-//		for (int i = 0; br.ready(); i++) {
-		for(int i = 0; i < 6; i++){
+		for (int i = 0; br.ready(); i++) {
+//		for(int i = 0; i < 13; i++){
 			line = br.readLine();
 			if(line == "\n"){
 				break;
 			}
+			if(line.length() > boardSize){
+				boardSize = line.length();
+			}
 			board_vect.add(line);
 		}
-		char[][] board = new char[board_vect.size()][board_vect.get(0).length()];
+		char[][] board = new char[board_vect.size()][boardSize];
 		
 		for(int i = 0; i < board_vect.size(); i++){
 			for(int j = 0; j < board_vect.get(i).length(); j++){
@@ -44,10 +43,10 @@ public class Board {
 					goalCoords.add(new Cell(j, i));
 					boxCoords.add(new Cell(j, i));
 				}else if(board[i][j] == Symbol.PLAYER.getChar()){
-					player = new Cell(j, i);
+					startPlayer = new Cell(j, i);
 					board[i][j] = Symbol.FREE_SPACE.getChar();
 				}else if(board[i][j] == Symbol.PLAYER_ON_GOAL.getChar()){
-					player = new Cell(j, i);
+					startPlayer = new Cell(j, i);
 					board[i][j] = Symbol.GOAL.getChar();
 					
 				}
@@ -66,7 +65,13 @@ public class Board {
 	}
 	
 	public static void printBoard(char[][] board){
+		System.out.print(" ");
+		for(int i = 0; i < board[0].length; i++) {
+			System.out.print(i);
+		}
+		System.out.println();
 		for(int i = 0; i < board.length; i++){
+			System.out.print(i);
 			for(int j = 0; j < board[0].length; j++){
 				System.out.print(board[i][j]);
 			}
@@ -75,19 +80,22 @@ public class Board {
 	}
 	
 	public static boolean isSolution(GameState gs){
-		Cell[] box_state = gs.getBoxState();
+		Cell[] box_state = gs.getBoxes();
 		boolean boxOnGoal;
 		for(int i = 0; i < goalCoords.size(); i++){
 			boxOnGoal = false;
 			Cell goal = goalCoords.get(i);
 			for(int j = 0; j < box_state.length; j++){
-				if(!goal.equals(box_state[j])){
+				if(goal.getX() == box_state[j].getX() && goal.getY() == box_state[j].getY()){
 					boxOnGoal = true;
 				}
 			}
 			if(!boxOnGoal){
 				return false;
 			}
+		}
+		if(gs.roomMatrix[startPlayer.getY()][startPlayer.getY()] != 1){
+			return false;
 		}
 		return true;
 	}

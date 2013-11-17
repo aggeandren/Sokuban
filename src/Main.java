@@ -1,181 +1,242 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-
-/**
- * Tankar och funderingar.
- * Läs kommentarerna i Board.
- * @author August
- *	
- */
+import sun.security.ssl.Debug;
 
 public class Main {
 	public static char[][] board;
-	public static PriorityQueue<GameState> game_queue;
-	public static ArrayList<Cell> boxes;
-	public static void main(String[] args) throws IOException{
-		
+	public static PriorityQueue<GameState> game_queue = new PriorityQueue<GameState>();
+	public static HashSet<Cell> boxes;
+	public static HashSet<GameState> transpositionTable = new HashSet<GameState>();
+
+	public static void main(String[] args) throws IOException {
+
 		board = Board.createBoard();
-		Board.printBoard(board);
-		GameState game_state = new GameState(Board.getBoxArray(), -1, -1, null, 'Z', board);
-		game_queue = Game.initateGameQueue(game_state);
+//		Board.printBoard(board);
+		GameState game_state = new GameState(Board.getBoxArray(), -1, -1, null,
+				'Z', board);
+		Game.initateGameQueue(game_state);
 		findPath();
 	}
-	
-	public static void findPath(){
+
+	public static void findPath() {
 		GameState current_game;
-		while(!game_queue.isEmpty()){
+		while (!game_queue.isEmpty()) {
 			current_game = game_queue.poll();
-			if(Board.isSolution(current_game)){
+//			Board.printBoard(current_game.currentBoard);
+			makeNextMoves(current_game);
+			if (Board.isSolution(current_game)) {
 				printPath(current_game);
 				break;
 			}
-			makeNextMoves(current_game);
 		}
+		
+		System.out.println("no path");
+		System.exit(0);
+	}
+
+	public static void printPath(GameState gs) {
+		Cell src = Board.startPlayer;
+		Cell dest = null;
+		StringBuilder path = new StringBuilder();
+		GameState gameState = gs;
+		while(gameState.prevGameState != null){
+//			Board.printBoard(gameState.board());
+			dest = gameState.getPlayerPos();
+			path.append(PlayerPathSearch.playerAStar(src, dest, gameState));
+			path.append(gameState.getPushDirection());
+			src = getNextSource(gameState);
+			gameState = gameState.prevGameState;
+		}
+		System.out.print(path.toString());
+		System.exit(0);
+		
 	}
 	
-	public static void printPath(GameState gs){
-		System.out.println("Done!");
-		Board.printBoard(gs.board());
+	private static Cell getNextSource(GameState gs) {
+		int x = gs.getX();
+		int y = gs.getY();
+		switch(gs.getPushDirection()) {
+		case 'U':
+			y--;
+			break;
+		case 'R':
+			x++;
+			break;
+		case 'D':
+			y++;
+			break;
+		case 'L':
+			x--;
+			break;
+		}
+		return new Cell(x, y);
 	}
-	
-	public static void makeNextMoves(GameState gs){
-		ArrayList<Cell> reachableBoxes = floodRoom(gs);
-		for(Cell box : reachableBoxes){
+
+	public static void makeNextMoves(GameState gs) {
+		HashSet<Cell> reachableBoxes = gs.getPossBoxes();
+		for (Cell box : reachableBoxes) {
 			createPossibleGameStates(box, gs);
 		}
 	}
-	
-	public static void createPossibleGameStates(Cell box, GameState gs){
-		GameState new_gs;
-		if(isDragableLeft(box, gs)){
-			new_gs = Game.createGameState(box.getX()-1, box.getY(), box, gs, 'L');
-//			if(transportCheck){
-//				game_queue.add(new_gs);
-//			}
-			game_queue.add(new_gs);
+
+	public static void createPossibleGameStates(Cell box, GameState gs) {
+		GameState newGs;
+		if (box == null) {
+			return;
 		}
-		if(isDragableUp(box, gs)){
-			new_gs = Game.createGameState(box.getX(), box.getY()-1, box, gs, 'U');
-//			if(transportCheck){
-//				game_queue.add(new_gs);
-//			}
-			game_queue.add(new_gs);
+		if (isDragableLeft(box, gs)) {
+			newGs = Game.createGameState(box, 'L', gs);
+			addGameState(newGs);
 		}
-		if(isDragableRight(box, gs)){
-			new_gs = Game.createGameState(box.getX()+1, box.getY(), box, gs, 'R');
-//			if(transportCheck){
-//				game_queue.add(new_gs);
-//			}
-			game_queue.add(new_gs);
+		if (isDragableUp(box, gs)) {
+			newGs = Game.createGameState(box, 'U', gs);
+			addGameState(newGs);
 		}
-		if(isDragableDown(box, gs)){
-			new_gs = Game.createGameState(box.getX(), box.getY()+1, box, gs, 'D');
-//			if(transportCheck){
-//				game_queue.add(new_gs);
-//			}
-			game_queue.add(new_gs);
+		if (isDragableRight(box, gs)) {
+			newGs = Game.createGameState(box, 'R', gs);
+			addGameState(newGs);
+		}
+		if (isDragableDown(box, gs)) {
+			newGs = Game.createGameState(box, 'D', gs);
+			addGameState(newGs);
 		}
 	}
 	
-	public static ArrayList<Cell> floodRoom(GameState gs){
+	public static void addGameState(GameState newGs){
+		if (!transpositionTable.contains(newGs)) {
+			newGs.setPossBoxes(floodRoom(newGs));
+			transpositionTable.add(newGs);
+			game_queue.add(newGs);
+		}
+	}
+
+	public static HashSet<Cell> floodRoom(GameState gs) {
 		Cell curr_cell = gs.getPlayerPos();
-		boxes = new ArrayList<Cell>();
+		boxes = new HashSet<Cell>();
 		int x = curr_cell.getX();
 		int y = curr_cell.getY();
 		char[][] board = gs.board();
 		Queue<Cell> cellsToVisit = new LinkedList<Cell>();
 		gs.setInRoom(x, y);
-		do{
-			if(isFreeUp(curr_cell, board, gs)){
-				
+		cellsToVisit.add(curr_cell);
+		while (!cellsToVisit.isEmpty()) {
+			curr_cell = cellsToVisit.poll();
+			x = curr_cell.getX();
+			y = curr_cell.getY();
+			if (isFreeLeft(curr_cell, board, gs)) {
+				cellsToVisit.add(new Cell(x - 1, y));
+				gs.setInRoom(x - 1, y);
 			}
-			if(isFreeUp(curr_cell, board, gs)){
-				
+			if (isFreeUp(curr_cell, board, gs)) {
+				cellsToVisit.add(new Cell(x, y - 1));
+				gs.setInRoom(x, y - 1);
 			}
-			if(isFreeUp(curr_cell, board, gs)){
-				
+			if (isFreeRight(curr_cell, board, gs)) {
+				cellsToVisit.add(new Cell(x + 1, y));
+				gs.setInRoom(x + 1, y);
 			}
-			if(isFreeUp(curr_cell, board, gs)){
-				
+			if (isFreeDown(curr_cell, board, gs)) {
+				cellsToVisit.add(new Cell(x, y + 1));
+				gs.setInRoom(x, y + 1);
 			}
-		}while()
+		}
+		return boxes;
 	}
-	
-	public static boolean isDragableLeft(Cell box, GameState gs){
-		int x = box.getX()-1;
+
+	public static boolean isDragableLeft(Cell box, GameState gs) {
+		int x = box.getX() - 1;
 		int y = box.getY();
-		if(gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'L')){
+		if (gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'L')) {
 			return true;
 		}
 		return false;
-		
+
 	}
-	public static boolean isDragableUp(Cell box, GameState gs){
-		int x = box.getX()-1;
-		int y = box.getY();
-		if(gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'U')){
+
+	public static boolean isDragableUp(Cell box, GameState gs) {
+		int x = box.getX();
+		int y = box.getY() - 1;
+		if (gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'U')) {
 			return true;
 		}
 		return false;
-		
+
 	}
-	public static boolean isDragableRight(Cell box, GameState gs){
-		int x = box.getX()-1;
+
+	public static boolean isDragableRight(Cell box, GameState gs) {
+		int x = box.getX() + 1;
 		int y = box.getY();
-		if(gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'R')){
-			return true;
-		}
-		return false;		
-	}
-	public static boolean isDragableDown(Cell box, GameState gs){
-		int x = box.getX()-1;
-		int y = box.getY();
-		if(gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'D')){
+		if (gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'R')) {
 			return true;
 		}
 		return false;
 	}
-	
-	public static boolean isFreeLeft(Cell cell, char[][] board, GameState gs){
-		int x = cell.getX()-1;
+
+	public static boolean isDragableDown(Cell box, GameState gs) {
+		int x = box.getX();
+		int y = box.getY() + 1;
+		if (gs.isInRoom(x, y) && Game.isPossMove(x, y, gs.board(), 'D')) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isFreeLeft(Cell cell, char[][] board, GameState gs) {
+		int x = cell.getX() - 1;
 		int y = cell.getY();
-		if(board[x][y] == Symbol.GOAL.getChar() || board[x][y] == Symbol.FREE_SPACE.getChar()){
+		if ((board[y][x] == Symbol.GOAL.getChar() || board[y][x] == Symbol.FREE_SPACE
+				.getChar()) && !gs.isInRoom(x, y)) {
 			return true;
-		}if(board[x][y] == Symbol.BOX.getChar() || board[x][y] == Symbol.BOX_ON_GOAL.getChar()){
+		}
+		if (board[y][x] == Symbol.BOX.getChar()
+				|| board[y][x] == Symbol.BOX_ON_GOAL.getChar()) {
 			boxes.add(gs.getBox(x, y));
 		}
 		return false;
 	}
-	public static boolean isFreeUp(Cell cell, char[][] board, GameState gs){
+
+	public static boolean isFreeUp(Cell cell, char[][] board, GameState gs) {
 		int x = cell.getX();
-		int y = cell.getY()-1;
-		if(board[x][y] == Symbol.GOAL.getChar() || board[x][y] == Symbol.FREE_SPACE.getChar()){
+		int y = cell.getY() - 1;
+		if ((board[y][x] == Symbol.GOAL.getChar() || board[y][x] == Symbol.FREE_SPACE
+				.getChar()) && !gs.isInRoom(x, y)) {
 			return true;
-		}if(board[x][y] == Symbol.BOX.getChar() || board[x][y] == Symbol.BOX_ON_GOAL.getChar()){
+		}
+		if (board[y][x] == Symbol.BOX.getChar()
+				|| board[y][x] == Symbol.BOX_ON_GOAL.getChar()) {
 			boxes.add(gs.getBox(x, y));
 		}
 		return false;
 	}
-	public static boolean isFreeRight(Cell cell, char[][] board, GameState gs){
-		int x = cell.getX()+1;
+
+	public static boolean isFreeRight(Cell cell, char[][] board, GameState gs) {
+		int x = cell.getX() + 1;
 		int y = cell.getY();
-		if(board[x][y] == Symbol.GOAL.getChar() || board[x][y] == Symbol.FREE_SPACE.getChar()){
+		if ((board[y][x] == Symbol.GOAL.getChar() || board[y][x] == Symbol.FREE_SPACE
+				.getChar()) && !gs.isInRoom(x, y)) {
 			return true;
-		}if(board[x][y] == Symbol.BOX.getChar() || board[x][y] == Symbol.BOX_ON_GOAL.getChar()){
+		}
+		if (board[y][x] == Symbol.BOX.getChar()
+				|| board[y][x] == Symbol.BOX_ON_GOAL.getChar()) {
 			boxes.add(gs.getBox(x, y));
 		}
 		return false;
 	}
-	public static boolean isFreeoDown(Cell cell, char[][] board, GameState gs){
+
+	public static boolean isFreeDown(Cell cell, char[][] board, GameState gs) {
 		int x = cell.getX();
-		int y = cell.getY()+1;
-		if(board[x][y] == Symbol.GOAL.getChar() || board[x][y] == Symbol.FREE_SPACE.getChar()){
+		int y = cell.getY() + 1;
+		if ((board[y][x] == Symbol.GOAL.getChar() || board[y][x] == Symbol.FREE_SPACE
+				.getChar()) && !gs.isInRoom(x, y)) {
 			return true;
-		}if(board[x][y] == Symbol.BOX.getChar() || board[x][y] == Symbol.BOX_ON_GOAL.getChar()){
+		}
+		if (board[y][x] == Symbol.BOX.getChar()
+				|| board[y][x] == Symbol.BOX_ON_GOAL.getChar()) {
 			boxes.add(gs.getBox(x, y));
 		}
 		return false;
